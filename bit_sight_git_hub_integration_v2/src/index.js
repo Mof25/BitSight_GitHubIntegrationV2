@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import GitHubIntegrationV2 from './GitHubIntegrationV2';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <GitHubIntegrationV2 />
   </React.StrictMode>,
   document.getElementById('root')
 );
