@@ -9,12 +9,23 @@ function GitHubIntegrationV2() {
 
   const [topFiveRepositories, setTopFiveRepositories] = useState({});
   const [topFiveUsers, setTopFiveUsers] = useState({});
+  const [loading, setLoading] = useState(false);
 
 
   useEffect(() => {
     fetchTopFiveRepositories();
     fetchTopFiveUsers();
+
+    setInterval(() => {
+      fetchTopFiveRepositories();
+      fetchTopFiveUsers();
+    }, 2000 * 60)
+
   }, []);
+
+  useEffect(() => {
+    getFollowers()
+  }, [loading]);
 
   async function fetchTopFiveRepositories() {
     var lastMonth = moment().subtract(1, 'month').add(1, 'day').format("YYYY-MM-DD");
@@ -28,23 +39,25 @@ function GitHubIntegrationV2() {
     var lastYear = moment().startOf('year').subtract(1, 'year').format("YYYY-MM-DD");
     await fetch(`https://api.github.com/search/users?q=created:">${lastYear}"&sort=followers&order=desc&per_page=5&type=Users`)
       .then(response => response.json())
-      .then(data => { setTopFiveUsers(data) })
-      // .then(() => {
-      //   let fiveUsers = new Array(topFiveUsers.items);
-      //   let func = topFiveUsers.items?.forEach(async (user, index) => {
-      //     await fetch(`https:api.github.com/users/${user.login}`)
-      //       .then(response => response.json())
-      //       .then(userData => {
-      //         let modifiedElement = { ...topFiveUsers.items[index], followers: userData.followers }
-      //         fiveUsers[index] = modifiedElement;
-      //       })
-      //       .catch(error => console.error("Error message" + error))
-      //   })
-      //   setTopFiveUsers(fiveUsers)
-      // })
+      .then(data => { setTopFiveUsers(data); setLoading(true) })
       .catch(error => console.error("Error message" + error))
   }
 
+
+
+  async function getFollowers() {
+    let fiveUsers = { ...topFiveUsers.items }
+    return topFiveUsers.items?.forEach(async (user, index) => {
+      await fetch(`https:api.github.com/users/${user.login}`)
+        .then(response => response.json())
+        .then(userData => {
+          let modifiedElement = { ...topFiveUsers.items[index], followers: userData.followers }
+          fiveUsers.push(modifiedElement)
+          setTopFiveUsers(fiveUsers)
+        })
+        .catch(error => console.error("Error message" + error))
+    })
+  }
 
   function tableDataForRepositories() {
     return topFiveRepositories.items?.map(rep => {
