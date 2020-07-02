@@ -1,22 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+import moment from 'moment';
 
 
 function GitHubIntegrationV2() {
 
 
   const [topFiveRepositories, setTopFiveRepositories] = useState({});
+  const [topFiveUsers, setTopFiveUsers] = useState({});
 
 
   useEffect(() => {
     fetchTopFiveRepositories();
+    fetchTopFiveUsers();
   }, []);
 
   async function fetchTopFiveRepositories() {
-    await fetch(`https://api.github.com/search/repositories?q=stars&sort=stars&order=desc`)
+    var lastMonth = moment().subtract(1, 'month').add(1, 'day').format("YYYY-MM-DD");
+    await fetch(`https://api.github.com/search/repositories?q=created:">${lastMonth}"&sort=stars&order=desc&per_page=5`)
       .then(response => response.json())
       .then(data => setTopFiveRepositories(data))
+      .catch(error => console.error("Error message" + error))
+  }
+
+  async function fetchTopFiveUsers() {
+    var lastYear = moment().startOf('year').subtract(1, 'year').format("YYYY-MM-DD");
+    await fetch(`https://api.github.com/search/users?q=created:">${lastYear}"&sort=followers&order=desc&per_page=5&type=Users`)
+      .then(response => response.json())
+      .then(data => { setTopFiveUsers(data) })
+      // .then(() => {
+      //   let fiveUsers = new Array(topFiveUsers.items);
+      //   let func = topFiveUsers.items?.forEach(async (user, index) => {
+      //     await fetch(`https:api.github.com/users/${user.login}`)
+      //       .then(response => response.json())
+      //       .then(userData => {
+      //         let modifiedElement = { ...topFiveUsers.items[index], followers: userData.followers }
+      //         fiveUsers[index] = modifiedElement;
+      //       })
+      //       .catch(error => console.error("Error message" + error))
+      //   })
+      //   setTopFiveUsers(fiveUsers)
+      // })
       .catch(error => console.error("Error message" + error))
   }
 
@@ -25,7 +50,7 @@ function GitHubIntegrationV2() {
     return topFiveRepositories.items?.map(rep => {
       const { id, name, description, stargazers_count } = rep
       return (
-        <tr>
+        <tr key={id}>
           <td>{id}</td>
           <td>{name}</td>
           <td>{description}</td>
@@ -35,33 +60,50 @@ function GitHubIntegrationV2() {
     })
   }
 
+  function tableDataForUsers() {
+    return topFiveUsers.items?.map(rep => {
+      const { id, login, avatar_url, followers } = rep
+      return (
+        <tr key={id}>
+          <td>{id}</td>
+          <td>{login}</td>
+          <td><img src={avatar_url} alt="None" style={{ width: "50px", height: "50px" }} /></td>
+          <td>{followers}</td>
+        </tr>
+      )
+    })
+  }
+
 
   return (
     <div className="App">
       <div className="top_five_repositories_div">
-        <button id="hot_repo" onClick={() => fetchTopFiveRepositories()}>Click to refresh repositories table</button>
-        <table id='top_five_repositories_table'>
-          <thead>        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Stars</th>
-          </tr></thead>
+        <button id="hot_repo" onClick={() => fetchTopFiveRepositories()}>Click to refresh table</button>
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Stars</th>
+            </tr></thead>
           <tbody>
             {tableDataForRepositories()}
           </tbody>
         </table>
       </div>
       <div className="top_five_users_div">
-        <button >Click to refresh users table</button>
-        <table id='g'>
-          <thead>        <tr>
-            <th>Id</th>
-            <th>Login</th>
-            <th>Avatar Image</th>
-            <th>Nº of followers</th>
-          </tr></thead>
+        <button id="prolific_users" onClick={() => fetchTopFiveUsers()}>Click to refresh table</button>
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Login</th>
+              <th>Avatar Image</th>
+              <th>Nº of followers</th>
+            </tr></thead>
           <tbody>
+            {tableDataForUsers()}
           </tbody>
         </table>
       </div>
